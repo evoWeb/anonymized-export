@@ -1,0 +1,93 @@
+#!/usr/bin/env php
+<?php
+
+use Evoweb\AnonymizedExport\Blueprint;
+
+require __DIR__ . '/vendor/autoload.php';
+
+// Database connection information
+$dsn = 'mysql:dbname=databasename;host=127.0.0.1';
+$user = '';
+$password = '';
+
+$database = new \Evoweb\AnonymizedExport\Database\SqlDatabase($dsn, $user, $password);
+$anonymizer = new \Evoweb\AnonymizedExport\Anonymizer($database);
+
+// Define tables to export. (Default is *)
+$anonymizer->addTablesToExport([
+    'table_a',
+    'table_b',
+    'table_c',
+    'table_d',
+]);
+
+$anonymizer->table('table_a', function (Blueprint $table) {
+    $table->primary('uid');
+
+    $table->column('title')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(255);
+    });
+    $table->column('subtitle')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(255);
+    });
+    $table->column('navtitle')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(80);
+    });
+});
+
+$anonymizer->table('table_b', function (Blueprint $table) {
+    $table->primary('uid');
+
+    $table->column('title')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(255);
+    });
+    $table->column('subtitle')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(255);
+    });
+    $table->column('navtitle')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(80);
+    });
+    $table->column('description')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(2000);
+    });
+    $table->column('teaser')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(1500);
+    });
+    $table->column('keywords')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(1500);
+    });
+});
+
+$anonymizer->table('table_c', function (Blueprint $table) {
+    $table->primary('uid');
+
+    $table->column('title')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(255);
+    });
+    $table->column('subtitle')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(255);
+    });
+    $table->column('navtitle')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(80);
+    });
+    $table->column('description_extra')->replaceWith(function ($generator) {
+        /** @var \Faker\Generator $generator */
+        return $generator->text(2000);
+    });
+});
+
+$anonymizer->run();
+
+echo 'Anonymization has been completed!';

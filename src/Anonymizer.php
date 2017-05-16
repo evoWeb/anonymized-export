@@ -106,7 +106,7 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
             }
         } else {
             $exportPath = $this->exportPath;
-            if (@file_exists(realpath($exportPath))) {
+            if (!@file_exists(realpath($exportPath))) {
                 throw new \Exception('Export dump folder ' . $exportPath . ' does not exists.');
             }
         }

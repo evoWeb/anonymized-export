@@ -12,7 +12,9 @@ $password = '';
 
 $database = new \Evoweb\AnonymizedExport\Database\SqlDatabase($dsn, $user, $password);
 $anonymizer = new \Evoweb\AnonymizedExport\Anonymizer($database);
-// set path to dump in the same path as the script
+
+// set folder to dump in the same path as the script
+// the folder has to be created by the user
 $anonymizer->setExportPath(__DIR__ . '/dump/');
 
 // Define tables to export. (Default is *)

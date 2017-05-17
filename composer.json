@@ -4,7 +4,7 @@
     "description": "Export tables with anonymized data",
     "homepage": "https://github.com/evweob/export-anonymized",
 
-    "require-dev": {
+    "require": {
         "php": ">=5.4.0",
         "arrilot/data-anonymization": "^1.0.3",
         "fzaninotto/Faker": "^1.6.0"

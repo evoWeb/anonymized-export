@@ -15,9 +15,11 @@ $anonymizer = new \Evoweb\AnonymizedExport\Anonymizer($database);
 
 // set folder to dump in the same path as the script
 // the folder has to be created by the user
+// (Default is vendor/evoweb/anonymized-export/dump/)
 $anonymizer->setExportPath(__DIR__ . '/dump/');
 
-// Define tables to export. (Default is *)
+// Define tables to export.
+// (Default is to include all tables)
 $anonymizer->addTablesToExport([
     'table_a',
     'table_b',

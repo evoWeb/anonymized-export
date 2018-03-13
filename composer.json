@@ -1,6 +1,6 @@
 {
     "name": "evoweb/anonymized-export",
-    "license": "GPL-3",
+    "license": "GPL-3.0-or-later",
     "description": "Export tables with anonymized data",
     "homepage": "https://github.com/evweob/export-anonymized",
 

@@ -9,6 +9,11 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     protected $database;
 
     /**
+     * @var int
+     */
+    protected $batchSize = 1000;
+
+    /**
      * Perform export with anonymized tables
      */
     public function run()
@@ -164,13 +169,32 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
         $this->writeDropTable($table);
         $this->writeCreateTable($table);
 
-        $tableContent = $this->getTableContent($table);
-        if ($tableContent->rowCount()) {
-            $this->writeInsertBegin($table);
-            $this->writeTableContent($tableContent, $table);
+        $currentBatch = 0;
+
+        $hasHeader = false;
+        $hasContent = false;
+        do {
+            $tableContent = $this->getTableContent($table, ($currentBatch * $this->batchSize), $this->batchSize);
+
+            $hasContent = ($tableContent->rowCount() > 0);
+
+            if ($hasContent) {
+                if ($currentBatch == 0) {
+                    $this->writeInsertBegin($table);
+                    $hasHeader = true;
+                }
+
+                $this->writeTableContent($tableContent, $table);
+
+            }
+        } while ($hasContent);
+
+        if ($hasHeader) {
             $this->writeInsertEnd();
-            $this->writeToExportFile('');
         }
+
+        $this->writeToExportFile('');
+
     }
 
     /**
@@ -196,12 +220,17 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
 
     /**
      * @param string $table
+     * @param int $offset
+     * @param int $count
      *
      * @return \PDOStatement
      */
-    protected function getTableContent($table)
+    protected function getTableContent($table, $offset = null, $count = null)
     {
         $sql = "SELECT * FROM {$table}";
+        if ($count) {
+            $sql .= "LIMIT ${count} OFFSET ${offset}";
+        }
 
         return $this->database->query($sql);
     }
@@ -295,4 +324,21 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     {
         fwrite($this->exportFile, $content . chr(10));
     }
+
+    /**
+     * @return int
+     */
+    public function getBatchSize()
+    {
+        return $this->batchSize;
+    }
+
+    /**
+     * @param int $batchSize
+     */
+    public function setBatchSize($batchSize)
+    {
+        $this->batchSize = $batchSize;
+    }
+
 }

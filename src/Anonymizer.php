@@ -11,7 +11,7 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     /**
      * @var int
      */
-    protected $batchSize = 1000;
+    protected $batchSize = 10000;
 
     /**
      * Perform export with anonymized tables
@@ -187,6 +187,9 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
                 $this->writeTableContent($tableContent, $table);
 
             }
+
+            $currentBatch++;
+
         } while ($hasContent);
 
         if ($hasHeader) {
@@ -229,7 +232,11 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     {
         $sql = "SELECT * FROM {$table}";
         if ($count) {
-            $sql .= "LIMIT ${count} OFFSET ${offset}";
+            $sql .= " LIMIT ";
+            if ($offset) {
+                $sql .= "${offset}, ";
+            }
+            $sql .= "${count}";
         }
 
         return $this->database->query($sql);

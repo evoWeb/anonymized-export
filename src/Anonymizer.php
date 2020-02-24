@@ -190,6 +190,10 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
 
             $currentBatch++;
 
+            // Memory cleanup
+            unset($tableContent);
+
+
         } while ($hasContent);
 
         if ($hasHeader) {

@@ -321,7 +321,7 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
             unset($tableContent);
 
 
-        } while ($hasContent && $currentBatch < 1);
+        } while ($hasContent);
 
         if ($hasHeader) {
             $this->writeInsertEnd();

@@ -31,13 +31,12 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     /**
      * @var array
      */
-    protected $tablesToExclude = [];
+    protected $tablesToTruncate = [];
 
     /**
-     * Still dumps the drop and create commands for excluded tables
-     * @var bool
+     * @var array
      */
-    protected $truncateExcludedTables = false;
+    protected $tablesToSkip = [];
 
     /**
      * Write to console when dumping
@@ -164,10 +163,22 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
      *
      * @return void
      */
-    public function addTableToExclude($table)
+    public function addTableToTruncate($table)
     {
-        if (!isset($this->tablesToExclude[$table])) {
-            $this->tablesToExclude[] = $table;
+        if (!isset($this->tablesToTruncate[$table])) {
+            $this->tablesToTruncate[] = $table;
+        }
+    }
+
+    /**
+     * @param string $table
+     *
+     * @return void
+     */
+    public function addTableToSkip($table)
+    {
+        if (!isset($this->tablesToSkip[$table])) {
+            $this->tablesToSkip[] = $table;
         }
     }
 
@@ -196,33 +207,33 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
      *
      * @throws \Exception
      */
-    public function addTablesToExclude(array $tables)
+    public function addTablesToTruncate(array $tables)
     {
         if (empty($tables)) {
-            throw new \Exception('addTablesToExclude argument needs to be a non-empty array');
+            throw new \Exception('addTablesToTruncate argument needs to be a non-empty array');
         }
 
         foreach ($tables as $table) {
-            $this->addTableToExclude($table);
+            $this->addTableToTruncate($table);
         }
     }
 
     /**
-     * @param bool $truncate
+     * @param array $tables
      *
      * @return void
+     *
+     * @throws \Exception
      */
-    public function setTruncateExcludedTables($truncate)
+    public function addTablesToSkip(array $tables)
     {
-        $this->truncateExcludedTables = $truncate;
-    }
+        if (empty($tables)) {
+            throw new \Exception('addTablesToSkip argument needs to be a non-empty array');
+        }
 
-    /**
-     * @return bool
-     */
-    public function getTruncateExcludedTables()
-    {
-        return $this->truncateExcludedTables;
+        foreach ($tables as $table) {
+            $this->addTableToSkip($table);
+        }
     }
 
     /**
@@ -250,28 +261,31 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
      */
     protected function exportTable($table)
     {
-        $excluded = in_array($table, $this->tablesToExclude);
+        $truncated = in_array($table, $this->tablesToTruncate);
+        $skipped = in_array($table, $this->tablesToSkip);
 
         if ($this->verbose) {
             echo "Dumping table: ${table}";
-            if ($excluded) {
-                if ($this->truncateExcludedTables) {
-                    echo ' [TRUNCATED]';
-                } else {
-                    echo ' [SKIPPED]';
-                }
+            if ($skipped) {
+                echo ' [SKIPPED]';
+            } else if ($truncated) {
+                echo ' [TRUNCATED]';
             }
 
             echo "\r\n";
 
         }
 
-        if (!$excluded || $this->truncateExcludedTables) {
+        if ($skipped) {
+            return;
+        } else {
             $this->writeDropTable($table);
             $this->writeCreateTable($table);
         }
 
-        if ($excluded) {
+        if ($truncated) {
+            $this->writeToExportFile('');
+
             return;
         }
 

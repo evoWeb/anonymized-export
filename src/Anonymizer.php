@@ -56,6 +56,11 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     protected $tablesToExport = [];
 
     /**
+     * @var array
+     */
+    protected $tablesToExclude = [];
+
+    /**
      * @param string $exportPath
      *
      * @return void
@@ -76,6 +81,8 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
         } else {
             $tables = $this->tablesToExport;
         }
+
+        $tables = array_diff($tables, $this->tablesToExclude);
 
         return $tables;
     }
@@ -142,6 +149,18 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     }
 
     /**
+     * @param string $table
+     *
+     * @return void
+     */
+    public function addTableToExclude($table)
+    {
+        if (!isset($this->tablesToExclude[$table])) {
+            $this->tablesToExclude[] = $table;
+        }
+    }
+
+    /**
      * @param array $tables
      *
      * @return void
@@ -156,6 +175,24 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
 
         foreach ($tables as $table) {
             $this->addTableToExport($table);
+        }
+    }
+
+    /**
+     * @param array $tables
+     *
+     * @return void
+     *
+     * @throws \Exception
+     */
+    public function addTablesToExclude(array $tables)
+    {
+        if (empty($tables)) {
+            throw new \Exception('addTablesToExclude argument needs to be a non-empty array');
+        }
+
+        foreach ($tables as $table) {
+            $this->addTableToExclude($table);
         }
     }
 

@@ -14,33 +14,6 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     protected $batchSize = 10000;
 
     /**
-     * Perform export with anonymized tables
-     */
-    public function run()
-    {
-        $this->openExportFile();
-        $tables = $this->prepareTables();
-        foreach ($tables as $table) {
-            $this->exportTable($table);
-        }
-    }
-
-    /**
-     * Describe a table with a given callback.
-     *
-     * @param string $name
-     * @param callable $callback
-     *
-     * @return void
-     */
-    public function table($name, callable $callback)
-    {
-        $blueprint = new Blueprint($name, $callback);
-
-        $this->blueprints[$name] = $blueprint->build();
-    }
-
-    /**
      * @var string
      */
     protected $exportPath = '';
@@ -59,6 +32,50 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
      * @var array
      */
     protected $tablesToExclude = [];
+
+    /**
+     * Still dumps the drop and create commands for excluded tables
+     * @var bool
+     */
+    protected $truncateExcludedTables = false;
+
+    /**
+     * Write to console when dumping
+     * @var bool
+     */
+    protected $verbose = false;
+
+    /**
+     * Perform export with anonymized tables
+     */
+    public function run()
+    {
+        $this->openExportFile();
+        $tables = $this->prepareTables();
+        foreach ($tables as $table) {
+            $this->exportTable($table);
+        }
+        if ($this->truncateExcludedTables) {
+            foreach ($this->tablesToExclude as $table) {
+                $this->exportTable($table, true);
+            }
+        }
+    }
+
+    /**
+     * Describe a table with a given callback.
+     *
+     * @param string $name
+     * @param callable $callback
+     *
+     * @return void
+     */
+    public function table($name, callable $callback)
+    {
+        $blueprint = new Blueprint($name, $callback);
+
+        $this->blueprints[$name] = $blueprint->build();
+    }
 
     /**
      * @param string $exportPath
@@ -197,20 +214,73 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     }
 
     /**
-     * @param string $table
+     * @param bool $truncate
      *
      * @return void
      */
-    protected function exportTable($table)
+    public function setTruncateExcludedTables($truncate)
     {
+        $this->truncateExcludedTables = $truncate;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getTruncateExcludedTables()
+    {
+        return $this->truncateExcludedTables;
+    }
+
+    /**
+     * @param bool $verbose
+     *
+     * @return void
+     */
+    public function setVerbose($verbose)
+    {
+        $this->verbose = $verbose;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getVerbose()
+    {
+        return $this->verbose;
+    }
+
+    /**
+     * @param string $table
+     * @param bool $truncate
+     *
+     * @return void
+     */
+    protected function exportTable($table, $truncate = false)
+    {
+        if ($this->verbose) {
+            echo "Dumping table: ${table}" . ($truncate ? ' [TRUNCATED]' : '') . "\r\n";
+        }
+
         $this->writeDropTable($table);
         $this->writeCreateTable($table);
+
+        if ($truncate) {
+            $this->writeToExportFile('');
+            return;
+        }
 
         $currentBatch = 0;
 
         $hasHeader = false;
         $hasContent = false;
         do {
+            if ($this->verbose) {
+                $memUsage = memory_get_usage();
+                $start = ($currentBatch * $this->batchSize);
+                $end = $start + $this->batchSize;
+                echo "Current Batch: ${currentBatch} | Records ${start} - ${end} | Memory: ${memUsage}\r\n";
+            }
+
             $tableContent = $this->getTableContent($table, ($currentBatch * $this->batchSize), $this->batchSize);
 
             $hasContent = ($tableContent->rowCount() > 0);
@@ -231,7 +301,7 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
             unset($tableContent);
 
 
-        } while ($hasContent);
+        } while ($hasContent && $currentBatch < 1);
 
         if ($hasHeader) {
             $this->writeInsertEnd();

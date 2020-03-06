@@ -55,11 +55,7 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
         foreach ($tables as $table) {
             $this->exportTable($table);
         }
-        if ($this->truncateExcludedTables) {
-            foreach ($this->tablesToExclude as $table) {
-                $this->exportTable($table, true);
-            }
-        }
+
     }
 
     /**
@@ -98,8 +94,6 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
         } else {
             $tables = $this->tablesToExport;
         }
-
-        $tables = array_diff($tables, $this->tablesToExclude);
 
         return $tables;
     }
@@ -251,21 +245,33 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
 
     /**
      * @param string $table
-     * @param bool $truncate
      *
      * @return void
      */
-    protected function exportTable($table, $truncate = false)
+    protected function exportTable($table)
     {
+        $excluded = in_array($table, $this->tablesToExclude);
+
         if ($this->verbose) {
-            echo "Dumping table: ${table}" . ($truncate ? ' [TRUNCATED]' : '') . "\r\n";
+            echo "Dumping table: ${table}";
+            if ($excluded) {
+                if ($this->truncateExcludedTables) {
+                    echo ' [TRUNCATED]';
+                } else {
+                    echo ' [SKIPPED]';
+                }
+            }
+
+            echo "\r\n";
+
         }
 
-        $this->writeDropTable($table);
-        $this->writeCreateTable($table);
+        if (!$excluded || $this->truncateExcludedTables) {
+            $this->writeDropTable($table);
+            $this->writeCreateTable($table);
+        }
 
-        if ($truncate) {
-            $this->writeToExportFile('');
+        if ($excluded) {
             return;
         }
 

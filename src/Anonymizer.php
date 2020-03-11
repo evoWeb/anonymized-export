@@ -45,6 +45,12 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     protected $verbose = false;
 
     /**
+     * Compress the dump with gzip
+     * @var bool
+     */
+    protected $compress = true;
+
+    /**
      * Perform export with anonymized tables
      */
     public function run()
@@ -105,13 +111,18 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
         $exportPath = $this->getExportPath();
 
         $fileNameAndPath = rtrim($exportPath, '/') . '/dump_' . mktime() . '.sql';
+        if ($this->compress) {
+            $fileNameAndPath .= '.gz';
+        }
+
         if (@file_exists($fileNameAndPath)) {
             unlink($fileNameAndPath);
         }
 
         touch($fileNameAndPath);
         chmod($fileNameAndPath, 0644);
-        $this->exportFile = fopen($fileNameAndPath, 'w+');
+        $fnOpen = ($this->compress ? 'gzopen' : 'fopen');
+        $this->exportFile = $fnOpen($fileNameAndPath, 'w');
     }
 
     /**
@@ -142,7 +153,8 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     protected function closeExportFile()
     {
         if (is_resource($this->exportFile)) {
-            fclose($this->exportFile);
+            $fnClose = ($this->compress ? 'gzclose' : 'fclose');
+            $fnClose($this->exportFile);
         }
     }
 
@@ -252,6 +264,24 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
     public function getVerbose()
     {
         return $this->verbose;
+    }
+
+    /**
+     * @param bool $verbose
+     *
+     * @return void
+     */
+    public function setCompress($compress)
+    {
+        $this->compress = $compress;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getCompress()
+    {
+        return $this->compress;
     }
 
     /**
@@ -460,7 +490,8 @@ class Anonymizer extends \Arrilot\DataAnonymization\Anonymizer
      */
     protected function writeToExportFile($content)
     {
-        fwrite($this->exportFile, $content . chr(10));
+        $fnWrite = ($this->compress ? 'gzwrite' : 'fwrite');
+        $fnWrite($this->exportFile, $content . chr(10));
     }
 
     /**
